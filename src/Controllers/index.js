@@ -23,7 +23,6 @@ import { WinstonLoggerAdapter } from '../Adapters/Logger/WinstonLoggerAdapter';
 import { InMemoryCacheAdapter } from '../Adapters/Cache/InMemoryCacheAdapter';
 import { AnalyticsAdapter } from '../Adapters/Analytics/AnalyticsAdapter';
 import MongoStorageAdapter from '../Adapters/Storage/Mongo/MongoStorageAdapter';
-import PostgresStorageAdapter from '../Adapters/Storage/Postgres/PostgresStorageAdapter';
 import ParsePushAdapter from '@parse/push-adapter';
 import ParseGraphQLController from './ParseGraphQLController';
 
@@ -272,11 +271,7 @@ export function getDatabaseAdapter(
   }
   switch (protocol) {
     case 'postgres:':
-      return new PostgresStorageAdapter({
-        uri: databaseURI,
-        collectionPrefix,
-        databaseOptions,
-      });
+      console.log('PostGresql')
     default:
       return new MongoStorageAdapter({
         uri: databaseURI,
