@@ -1,3 +1,10 @@
+# [7.4.0-alpha.6](https://github.com/parse-community/parse-server/compare/7.4.0-alpha.5...7.4.0-alpha.6) (2024-11-19)
+
+
+### Bug Fixes
+
+* Security upgrade cross-spawn from 7.0.3 to 7.0.6 ([#9444](https://github.com/parse-community/parse-server/issues/9444)) ([3d034e0](https://github.com/parse-community/parse-server/commit/3d034e0a993e3e5bd9bb96a7e382bb3464f1eb68))
+
 # [7.4.0-alpha.5](https://github.com/parse-community/parse-server/compare/7.4.0-alpha.4...7.4.0-alpha.5) (2024-10-22)
 
 
