@@ -1230,4 +1230,128 @@ describe('ParseLiveQuery', function () {
     await new Promise(resolve => setTimeout(resolve, 100));
     expect(createSpy).toHaveBeenCalledTimes(1);
   });
+
+  it('test beforeLiveQueryEvent ran while creating an object', async function () {
+    await reconfigureServer({
+      liveQuery: {
+        classNames: ['TestObject'],
+      },
+      startLiveQueryServer: true,
+      verbose: false,
+      silent: true,
+    });
+
+
+    Parse.Cloud.beforeLiveQueryEvent('TestObject', req => {
+      expect(req.user).toBeUndefined();
+      expect(req.object.get('foo')).toBe('bar');
+    })
+
+    const query = new Parse.Query(TestObject);
+    const subscription = await query.subscribe();
+    subscription.on('create', object => {
+      expect(object.get('foo')).toBe('bar');
+      done();
+    });
+
+    const object = new TestObject();
+    object.set('foo', 'bar');
+    await object.save();
+  });
+
+  it('test beforeLiveQueryEvent ran while updating an object', async function (done) {
+    await reconfigureServer({
+      liveQuery: {
+        classNames: ['TestObject'],
+      },
+      startLiveQueryServer: true,
+      verbose: false,
+      silent: true,
+    });
+    const object = new TestObject();
+    object.set('foo', 'bar');
+    await object.save();
+
+    Parse.Cloud.afterSave('TestObject', async req => {
+      expect(req.object.get('foo')).toBe('baz');
+    })
+    Parse.Cloud.beforeLiveQueryEvent('TestObject', async req => {
+      expect(req.object.get('foo')).toBe('baz');
+      req.object.set('foo', 'rebaz');
+    })
+    Parse.Cloud.afterLiveQueryEvent('TestObject', req => {
+      expect(req.event).toBe('update');
+      expect(req.user).toBeUndefined();
+      expect(req.object.get('foo')).toBe('rebaz');
+    });
+
+    const query = new Parse.Query(TestObject);
+    const subscription = await query.subscribe();
+    subscription.on('update', object => {
+      expect(object.get('foo')).toBe('rebaz');
+      done();
+    });
+
+    object.set('foo', 'baz')
+    await object.save();
+  });
+
+  it('test beforeLiveQueryEvent should filter specific object creation', async function () {
+    await reconfigureServer({
+      liveQuery: {
+        classNames: ['TestObject'],
+      },
+      startLiveQueryServer: true,
+      verbose: false,
+      silent: true,
+    });
+
+
+    Parse.Cloud.beforeLiveQueryEvent('TestObject', req => {
+      expect(req.object.get('foo')).toBe('bar');
+      if (req.object.get('foo') === 'bar') {
+        req.context.preventLiveQuery === true;
+      }
+    })
+
+    const query = new Parse.Query(TestObject).equalTo('foo', 'bar');
+    const subscription = await query.subscribe();
+    subscription.on('create', () => {
+      fail('create should not have been called.');
+    });
+
+    const object = new TestObject();
+    object.set('foo', 'bar');
+    await object.save();
+  });
+
+  it('test beforeLiveQueryEvent should filter specific object update', async function () {
+    await reconfigureServer({
+      liveQuery: {
+        classNames: ['TestObject'],
+      },
+      startLiveQueryServer: true,
+      verbose: false,
+      silent: true,
+    });
+    const object = new TestObject();
+    object.set('foo', 'bar');
+    await object.save();
+
+    Parse.Cloud.beforeLiveQueryEvent('TestObject', async req => {
+      expect(req.object.get('foo')).toBe('baz');
+      if (req.object.get('foo') === 'baz') {
+        req.context.preventLiveQuery === true;
+      }
+    })
+
+    const query = new Parse.Query(TestObject).equalTo('foo', 'baz');
+    const subscription = await query.subscribe();
+    subscription.on('update', object => {
+      fail('update should not have been called.');
+    });
+
+    object.set('foo', 'baz')
+    await object.save();
+  });
 });

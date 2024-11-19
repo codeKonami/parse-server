@@ -14,6 +14,7 @@ export const Types = {
   afterFind: 'afterFind',
   beforeConnect: 'beforeConnect',
   beforeSubscribe: 'beforeSubscribe',
+  beforeEvent: 'beforeEvent',
   afterEvent: 'afterEvent',
 };
 
@@ -278,7 +279,8 @@ export function getRequestObject(
     triggerType === Types.afterDelete ||
     triggerType === Types.beforeLogin ||
     triggerType === Types.afterLogin ||
-    triggerType === Types.afterFind
+    triggerType === Types.afterFind ||
+    triggerType === Types.beforeEvent
   ) {
     // Set a copy of the context on the request object.
     request.context = Object.assign({}, context);
@@ -885,7 +887,8 @@ export function maybeRunTrigger(
           triggerType === Types.beforeSave ||
           triggerType === Types.afterSave ||
           triggerType === Types.beforeDelete ||
-          triggerType === Types.afterDelete
+          triggerType === Types.afterDelete ||
+          triggerType === Types.beforeEvent
         ) {
           Object.assign(context, request.context);
         }

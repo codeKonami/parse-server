@@ -604,6 +604,43 @@ ParseCloud.beforeSubscribe = function (parseClass, handler, validationHandler) {
   );
 };
 
+/**
+ * Registers a before live query event function.
+ *
+ * **Available in Cloud Code only.**
+ *
+ * If you want to use beforeLiveQueryEvent for a predefined class in the Parse JavaScript SDK (e.g. {@link Parse.User} or {@link Parse.File}), you should pass the class itself and not the String for arg1.
+ * ```
+ * Parse.Cloud.beforeLiveQueryEvent('MyCustomClass', (request) => {
+ *   // code here
+ * }, (request) => {
+ *   // validation code here
+ * });
+ *
+ * Parse.Cloud.beforeLiveQueryEvent(Parse.User, (request) => {
+ *   // code here
+ * }, { ...validationObject });
+ *```
+ *
+ * @method beforeLiveQueryEvent
+ * @name Parse.Cloud.beforeLiveQueryEvent
+ * @param {(String|Parse.Object)} arg1 The Parse.Object subclass to register the before live query event function for. This can instead be a String that is the className of the subclass.
+ * @param {Function} func The function to run before a live query event (publish) is made. This function can be async and should take one parameter, a {@link Parse.Cloud.TriggerRequest}.
+ * @param {(Object|Function)} validator An optional function to help validating cloud code. This function can be an async function and should take one parameter a {@link Parse.Cloud.TriggerRequest}, or a {@link Parse.Cloud.ValidatorObject}.
+ */
+ ParseCloud.beforeLiveQueryEvent = function (parseClass, handler, validationHandler) {
+  validateValidator(validationHandler);
+  const className = triggers.getClassName(parseClass);
+  triggers.addTrigger(
+    triggers.Types.beforeEvent,
+    className,
+    handler,
+    Parse.applicationId,
+    validationHandler
+  );
+};
+
+
 ParseCloud.onLiveQueryEvent = function (handler) {
   triggers.addLiveQueryEventHandler(handler, Parse.applicationId);
 };

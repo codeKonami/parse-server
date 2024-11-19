@@ -1627,7 +1627,7 @@ RestWrite.prototype.runDatabaseOperation = function () {
 };
 
 // Returns nothing - doesn't wait for the trigger.
-RestWrite.prototype.runAfterSaveTrigger = function () {
+RestWrite.prototype.runAfterSaveTrigger = async function () {
   if (!this.response || !this.response.response || this.runOptions.many) {
     return;
   }
@@ -1642,21 +1642,31 @@ RestWrite.prototype.runAfterSaveTrigger = function () {
   if (!hasAfterSaveHook && !hasLiveQuery) {
     return Promise.resolve();
   }
-
   const { originalObject, updatedObject } = this.buildParseObjects();
   updatedObject._handleSaveResponse(this.response.response, this.response.status || 200);
 
   if (hasLiveQuery) {
-    this.config.database.loadSchema().then(schemaController => {
-      // Notify LiveQueryServer if possible
-      const perms = schemaController.getClassLevelPermissions(updatedObject.className);
-      this.config.liveQueryController.onAfterSave(
-        updatedObject.className,
-        updatedObject,
-        originalObject,
-        perms
-      );
-    });
+    const hasBeforeEventHook = triggers.triggerExists(
+      this.className,
+      triggers.Types.beforeEvent,
+      this.config.applicationId
+    );
+    const publishedObject = updatedObject.clone();
+    if (hasBeforeEventHook) {
+      await triggers.maybeRunTrigger(triggers.Types.beforeEvent, this.auth, publishedObject, originalObject, this.config, this.context);
+    }
+    if (this.context.preventLiveQuery !== true) {
+      this.config.database.loadSchema().then(schemaController => {
+        // Notify LiveQueryServer if possible
+        const perms = schemaController.getClassLevelPermissions(publishedObject.className);
+        this.config.liveQueryController.onAfterSave(
+          publishedObject.className,
+          publishedObject,
+          originalObject,
+          perms
+        );
+      });
+    }
   }
   if (!hasAfterSaveHook) {
     return Promise.resolve();
